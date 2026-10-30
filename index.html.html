@@ -1,0 +1,1125 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ТРОН</title>
+<style>
+  :root{
+    --panel:#191512; --panel2:#221c17; --panel3:#2b231c; --line:#3a2f26;
+    --ink:#e8ddc9; --dim:#9c8f7c; --gold:#e0ae4e; --blood:#c14734;
+    --green:#6aa864; --blue:#5c8bb5; --violet:#9a7cc4;
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; color:var(--ink); min-height:100vh;
+    background:radial-gradient(1200px 800px at 50% -20%, #271e16, #0d0b09 65%) fixed;
+    font:14px/1.5 "Segoe UI",system-ui,-apple-system,sans-serif;
+  }
+  h1,h2,h3{margin:0; font-weight:600}
+  button{
+    font:inherit; color:var(--ink); background:var(--panel3); border:1px solid var(--line);
+    padding:8px 14px; border-radius:6px; cursor:pointer; transition:.12s;
+  }
+  button:hover:not(:disabled){background:#3a2f26; border-color:var(--gold); color:#fff}
+  button:disabled{opacity:.35; cursor:not-allowed}
+  button.primary{background:linear-gradient(#7a5a22,#5b4118); border-color:#a37c2f; color:#ffe9bd; font-weight:600}
+  button.primary:hover:not(:disabled){background:linear-gradient(#96702b,#6d4e1d); color:#fff}
+  button.tiny{padding:2px 8px; font-size:11px; border-radius:4px}
+  button.danger{border-color:#6b2a20; color:#e6b3a8}
+  button.magic{border-color:#4a3a63; color:#c3b1e0}
+
+  header{
+    display:flex; align-items:center; gap:18px; padding:12px 20px;
+    border-bottom:1px solid var(--line); background:linear-gradient(#191512,#131009);
+  }
+  header h1{font-size:16px; color:var(--gold); letter-spacing:.26em}
+  .spacer{flex:1}
+  .status{font-size:12.5px; color:var(--dim); text-align:right}
+  .status b{color:var(--ink)}
+  .status .gold{color:var(--gold)}
+
+  .board{display:grid; grid-template-columns:minmax(340px,1.05fr) minmax(340px,1fr) 290px; gap:14px; padding:14px; align-items:start}
+  .panel{background:var(--panel); border:1px solid var(--line); border-radius:10px; padding:11px}
+  .panel > h3{font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--dim); margin-bottom:9px}
+
+  .pcard{border:1px solid var(--line); border-radius:8px; padding:8px 9px; margin-bottom:7px; background:var(--panel2)}
+  .pcard.turn{border-color:var(--gold); background:linear-gradient(#2c2317,#1e1811)}
+  .pcard.boss{border-color:#8a5f1d; background:linear-gradient(#33240f,#1d1509)}
+  .phead{display:flex; justify-content:space-between; align-items:baseline; gap:6px; font-size:13px}
+  .pname{font-weight:600}
+  .pstat{font-size:11.5px; color:var(--dim); margin:2px 0 5px}
+  .pstat b{color:var(--ink)}
+  .chips{display:flex; flex-wrap:wrap; gap:3px}
+  .chip{font-size:10.5px; padding:1px 6px; border-radius:4px; background:#2f2519; border:1px solid #453522; color:#d8c49a}
+  .chip.empty{opacity:.35}
+  .chip.spell{background:#241d33; border-color:#463a5e; color:#cbb9ea}
+  .chip.pack{background:#2a2115; border-color:#5a4426; color:#e3c894}
+  .chip.bad{background:#3a1c17; border-color:#63291f; color:#e6a08f}
+  .chip.good{background:#1e3220; border-color:#33512f; color:#a9d3a2}
+
+  .center{min-height:420px}
+  .turn-head{font-size:12.5px; color:var(--dim); margin-bottom:10px}
+  .turn-head b{color:var(--gold)}
+  .big{font-size:24px; margin:0 0 4px}
+  .sub{color:var(--dim); font-size:12.5px; margin-bottom:14px}
+  .actions{display:flex; gap:8px; flex-wrap:wrap; margin-top:14px}
+  .act-btn{display:flex; flex-direction:column; align-items:flex-start; gap:1px; min-width:158px; padding:10px 14px}
+  .act-btn small{color:var(--dim); font-size:10.5px}
+  .act-btn b{font-size:14px}
+  .spellbar{margin-top:14px; padding:10px 11px; border:1px solid #463a5e; border-radius:8px; background:#1b1730}
+  .sbtitle{font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:#8f7fb5; margin-bottom:7px}
+  .spellbar button{margin:0 5px 5px 0}
+
+  .tracker{display:flex; gap:8px; padding:10px 20px 0; flex-wrap:wrap}
+  .tpill{display:flex; align-items:center; gap:6px; padding:4px 10px; border-radius:20px;
+    border:1px solid var(--line); background:var(--panel); font-size:11.5px}
+  .tpill.cur{border-color:var(--gold); background:#241c12}
+  .tpill.bos{border-color:#8a5f1d}
+  .tname{max-width:100px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .tbar{width:64px; height:6px; border-radius:3px; background:#2a231b; overflow:hidden; display:inline-block}
+  .tbar i{display:block; height:100%; transition:width .25s}
+  .tval{color:var(--dim); font-size:10.5px}
+
+  .setup{display:flex; flex-direction:column; gap:10px; align-items:center; margin:26px 0}
+  .setuprow{display:flex; align-items:center; gap:12px}
+  .namein{background:#120f0c; border:1px solid var(--line); color:var(--ink);
+    padding:10px 14px; border-radius:8px; font:inherit; width:240px; text-align:center}
+  .namein:focus{outline:none; border-color:var(--gold)}
+
+  .monster{border:1px solid #5c2a20; border-radius:10px; padding:14px 16px; margin-bottom:12px;
+    background:linear-gradient(160deg,#2a1712,#1b100d)}
+  .monster.boss{background:linear-gradient(160deg,#33240f,#1b1207); border-color:#8a5f1d}
+  .monster h2{font-size:20px; margin-bottom:2px}
+  .mtype{font-size:10px; letter-spacing:.16em; text-transform:uppercase; color:var(--blood)}
+  .monster.boss .mtype{color:var(--gold)}
+  .versus{display:flex; align-items:center; gap:12px; margin-top:12px; font-size:13px; flex-wrap:wrap}
+  .vbox{background:#120f0c; border:1px solid var(--line); border-radius:7px; padding:6px 12px; text-align:center; min-width:84px}
+  .vbox span{display:block; font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--dim)}
+  .vbox b{font-size:19px}
+  .vbox.mine b{color:var(--green)}
+  .vbox.foe b{color:var(--blood)}
+  .plus{color:var(--dim); font-size:17px}
+  .die{display:inline-flex;align-items:center;justify-content:center;width:46px;height:46px;border-radius:9px;
+    font-size:22px;font-weight:700;border:1px solid var(--line);background:#120f0c}
+  .die.crit{color:var(--gold);border-color:var(--gold)}
+  .die.fail{color:var(--blood);border-color:var(--blood)}
+
+  .resultbox{border-radius:10px; padding:16px 18px; border:1px solid var(--line); background:var(--panel2)}
+  .resultbox.win{border-color:#3f6b3a; background:linear-gradient(160deg,#1a2a17,#121a10)}
+  .resultbox.lose{border-color:#7a2e22; background:linear-gradient(160deg,#2a1512,#1a0f0d)}
+  .resultbox h2{font-size:19px; margin-bottom:8px}
+  .resultbox.win h2{color:var(--green)}
+  .resultbox.lose h2{color:var(--blood)}
+  .resultbox p{margin:3px 0; color:#cfc3ad; font-size:13px}
+
+  .lootgrid{display:flex; gap:9px; flex-wrap:wrap; margin-top:10px}
+  .lootcard{border:1px solid var(--line); border-radius:8px; padding:10px 13px; min-width:168px;
+    background:linear-gradient(160deg,#242017,#171310)}
+  .lootcard .lt{font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--dim)}
+  .lootcard .ln{font-size:15px; margin:2px 0}
+  .lootcard .lp{color:var(--gold); font-weight:600; font-size:12px}
+
+  .log{max-height:calc(100vh - 120px); overflow:auto; font-size:11.5px; display:flex; flex-direction:column; gap:4px}
+  .log .l{padding:3px 7px; border-radius:5px; border-left:2px solid var(--line); background:#151210; color:#b8aa93}
+  .log .l.gold{border-color:var(--gold); color:#f0d9a6; background:#1e1710}
+  .log .l.good{border-color:var(--green); color:#b9dcb3}
+  .log .l.bad{border-color:var(--blood); color:#e6b3a8}
+  .log .l.magic{border-color:var(--violet); color:#cdbce8}
+
+  svg.board-svg{width:100%; height:auto; display:block}
+
+  .splash{max-width:680px; margin:6vh auto; text-align:center; padding:0 20px}
+  .splash h1{font-size:46px; color:var(--gold); letter-spacing:.3em; margin-bottom:6px}
+  .splash .tag{color:var(--dim); margin-bottom:26px}
+  .splash p{color:#bbae98; text-align:left; margin:12px auto; max-width:540px}
+  .pick{display:flex; gap:10px; justify-content:center; margin-top:24px; flex-wrap:wrap}
+  .pick button{min-width:140px; padding:13px 20px; font-size:15px}
+  details{margin-top:24px; text-align:left; max-width:600px; margin-left:auto; margin-right:auto; color:var(--dim); font-size:12.5px}
+  details summary{cursor:pointer; color:var(--gold); margin-bottom:8px}
+  details li{margin:3px 0}
+  table.mini{border-collapse:collapse; font-size:12px; margin:8px 0}
+  table.mini td,table.mini th{border:1px solid var(--line); padding:3px 8px; text-align:left}
+  @media(max-width:1100px){
+    .board{grid-template-columns:1fr}
+    .log{max-height:220px}
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   НАЛАШТУВАННЯ
+   ============================================================ */
+const CFG = {
+  STEPS: 6,
+  DC: [10, 13, 15, 18, 22, 24],
+  THRONE_DC: 30,
+  BOSS_FLOOR: 24,
+  ROUNDS: 3,
+  MAX_BOSS_BONUS: 6,
+  POCKETS: 2,
+  PACK: 2,
+  TIER: [1, 1, 2, 2, 3, 4]
+};
+
+const d20 = () => 1 + Math.floor(Math.random() * 20);
+const rnd = n => Math.floor(Math.random() * n);
+const pick = a => a[rnd(a.length)];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* ============================================================
+   ДАНІ
+   ============================================================ */
+const ITEMS = {
+  1:{ weapon:[['Кинджал',1],['Кайло',2]],
+      armor:[['Шкірянка',1],["М'які чоботи",0,'sneak',3]],
+      artifact:[['Амулет',1],['Талісман',2]] },
+  2:{ weapon:[['Короткий меч',2],['Сокира',3]],
+      armor:[['Кольчуга',2],['Плащ тіні',1,'sneak',3]],
+      artifact:[['Перстень',2],['Оберіг',3]] },
+  3:{ weapon:[['Довгий меч',3],['Молот',4]],
+      armor:[['Лускатий',3],['Напівлати',4]],
+      artifact:[['Око',3],['Перстень невидимості',1,'sneak',4]] },
+  4:{ weapon:[['Дворучний',4],['Меч світанку',6]],
+      armor:[['Лати',4],['Драконяча луска',6]],
+      artifact:[['Корона',4],['Око дракона',6]] }
+};
+
+/* монстри по сходинках: однакові на всіх смугах */
+const MONSTERS = [
+  { n:'Щур-мутант',       dc:10 },
+  { n:'Кобольд-вартовий', dc:13 },
+  { n:'Гоблін-розвідник', dc:15, fast:true },
+  { n:'Скелет-мечник',    dc:18 },
+  { n:'Отрок-шаман',      dc:22, hex:true },
+  { n:'Охоронець трону',  dc:24, guard:true }
+];
+
+const ABILITY = {
+  fast:'⚡ Спритний — повз нього не прокрастись',
+  hex:'✶ Шаман — починає бій із −2 проти тебе',
+  guard:'◆ Охоронець — на провал ще й крок назад'
+};
+const SLOT_UA = { weapon:'зброя', armor:'броня', artifact:'артефакт' };
+
+const SPELLS = [
+  { n:'Зілля сили',     s:'self',    e:'bonus',   v:5,  t:'+5 до свого кидка' },
+  { n:'Друге дихання',  s:'self',    e:'bonus',   v:3,  t:'+3 до свого кидка' },
+  { n:'Свиток обходу',  s:'self',    e:'pass',    v:0,  t:'авто-успіх, але без скарбу' },
+  { n:'Зрада',          s:'enemy',   e:'penalty', v:-5, t:'−5 до чужого кидка' },
+  { n:'Рука в темряві', s:'enemy',   e:'steal',   v:0,  t:'вкрасти з рюкзака цілі' },
+  { n:'Кайдани',        s:'enemy',   e:'skip',    v:0,  t:'ціль пропускає хід' },
+  { n:'Туман',          s:'lane',    e:'lanePen', v:-2, t:'−2 усім на смузі' },
+  { n:'Благословення',  s:'lane',    e:'laneBon', v:2,  t:'+2 усім на смузі' },
+  { n:'Затемнення',     s:'pyramid', e:'global',  v:-2, t:'−2 усім гравцям' },
+  { n:'Землетрус',      s:'pyramid', e:'quake',   v:0,  t:'усі на крок назад' },
+  { n:'Виклик стража',  s:'enemy',   e:'summon',  v:4,  t:'+4 до DC цілі — на неї наслано монстра' }
+];
+
+const BOSS_CARDS = [
+  ['Вартовий','+2 до DC трону','guard'],
+  ['Прокляття','претендент −3 до наступного кидка','curse'],
+  ['Крадіжка','забирає предмет із рюкзака','steal'],
+  ['Стіна вогню','претендент пропускає хід','wall'],
+  ['Страх','+3 до DC трону','fear'],
+  ['Податок','усі скидають карту магії','tax']
+];
+
+const SIDE_NAMES = ['Південь','Захід','Північ','Схід'];
+
+/* геометрія смуг у координатах SVG */
+const LANE = {
+  0:{ v:true,  pos:[900,830,765,710,640,572], start:[500,975] },
+  1:{ v:false, pos:[100,165,230,295,360,428], start:[25,500]  },
+  2:{ v:true,  pos:[100,165,230,295,360,428], start:[500,25]  },
+  3:{ v:false, pos:[900,835,770,705,640,572], start:[975,500] }
+};
+const STEP_DOTS = []; // [side][step] -> {x,y}
+for(let s=0;s<4;s++){
+  STEP_DOTS[s] = LANE[s].pos.map(v => LANE[s].v ? {x:500, y:v} : {x:v, y:500});
+}
+
+/* ============================================================
+   СТАН
+   ============================================================ */
+let S = null;
+
+function shapeEl(i, cx, cy, r, fill, stroke, sw){
+  const k = ((i % 4) + 4) % 4;
+  const st = stroke ? ` stroke="${stroke}" stroke-width="${sw}"` : '';
+  if(k === 0) return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${fill}"${st}/>`;
+  if(k === 1) return `<rect x="${cx-r}" y="${cy-r}" width="${r*2}" height="${r*2}" rx="3" fill="${fill}"${st}/>`;
+  if(k === 2) return `<polygon points="${cx},${cy-r-1} ${cx+r},${cy+r-1} ${cx-r},${cy+r-1}" fill="${fill}"${st}/>`;
+  return `<polygon points="${cx},${cy-r-1} ${cx+r},${cy} ${cx},${cy+r+1} ${cx-r},${cy}" fill="${fill}"${st}/>`;
+}
+function badge(i){
+  return `<svg width="17" height="17" viewBox="0 0 34 34" style="vertical-align:-3px">${shapeEl(i,17,17,12,PLAYER_COLORS[i%4],'','')}</svg>`;
+}
+
+function newGame(n, names){
+  const sides = n === 2 ? [0,2] : (n === 3 ? [0,2,1] : [0,2,1,3]);
+  S = {
+    players: Array.from({length:n}, (_,i)=>({
+      id:i, name:((names && names[i]) ? names[i] : 'Гравець '+(i+1)), side:sides[i], step:0,
+      slots:{ weapon:{slot:'weapon',name:'Іржавий ніж',p:0}, armor:null, artifact:null },
+      pocket:[], pack:[], temp:0, skip:false, isBoss:false, moved:false
+    })),
+    turn:0, phase:'idle',
+    pend:null, result:null, loot:null,
+    castBy:[], presenceUsed:false,
+    boss:{ playerId:null }, bossRounds:CFG.ROUNDS, bossBonus:0, bossCard:null, coronations:0,
+    log:[], over:false, winner:null
+  };
+  // стартові карти магії
+  S.players.forEach(p => { p.pocket.push(makeSpell('Зілля сили')); });
+  log('Трон порожній. Четверо йдуть нагору.', 'gold');
+  render();
+}
+
+function makeSpell(name){
+  const d = SPELLS.find(x => x.n === name) || pick(SPELLS);
+  return { kind:'spell', ...d };
+}
+
+function cur(){ return S.players[S.turn]; }
+function bossPlayer(){ return S.boss.playerId === null ? null : S.players[S.boss.playerId]; }
+function bossExists(){ return S.boss.playerId !== null; }
+
+function gear(p, ctx){
+  return ['weapon','armor','artifact'].reduce((s,k)=>{
+    const it = p.slots[k];
+    if(!it) return s;
+    return s + it.p + (it.vs && it.vs === ctx ? it.vp : 0);
+  }, 0);
+}
+function bonus(p, ctx){ return p.step + 1 + gear(p, ctx) + p.temp; }
+function monsterHere(p){ return p.step < CFG.STEPS ? MONSTERS[p.step] : null; }
+function abilityOf(m){ if(!m) return ''; return m.fast ? ABILITY.fast : (m.hex ? ABILITY.hex : (m.guard ? ABILITY.guard : '')); }
+function itemTxt(it){
+  if(it.p > 0 && it.vs) return `+${it.p} (+${it.vp} крадьки)`;
+  if(it.p > 0) return `+${it.p}`;
+  if(it.vs) return `+${it.vp} крадьки`;
+  return '—';
+}
+function stepDC(p){ return CFG.DC[Math.min(p.step, CFG.STEPS-1)]; }
+function sameSquare(a,b){ return !a.isBoss && !b.isBoss && a.side === b.side && a.step === b.step; }
+function throneHardening(){ return 2 * Math.max(0, S.coronations - 1); }
+function bossDC(){
+  const b = bossPlayer();
+  const hard = throneHardening() + S.bossBonus;
+  if(!b) return CFG.THRONE_DC + hard;
+  return Math.round(CFG.BOSS_FLOOR + gear(b)/2) + hard;
+}
+function log(msg, cls){
+  S.log.unshift({ msg, cls: cls || '' });
+  if(S.log.length > 140) S.log.pop();
+}
+
+/* ============================================================
+   СКАРБ
+   ============================================================ */
+function drawLoot(step, count){
+  const tier = CFG.TIER[Math.min(step, CFG.STEPS-1)];
+  const out = [];
+  const slots = ['weapon','armor','artifact'];
+  for(let i=0;i<3;i++){ const j = rnd(i+1); [slots[i],slots[j]]=[slots[j],slots[i]]; }
+  for(let i=0;i<count;i++){
+    if(Math.random() < 0.30){ out.push(makeSpell()); }
+    else {
+      const slot = slots[i % 3];
+      const [name, power] = pick(ITEMS[tier][slot]);
+      out.push({ kind:'item', slot, name, p:power });
+    }
+  }
+  return out;
+}
+
+function grantLoot(step, count){
+  S.loot = drawLoot(step, count);
+  S.picks = 0;
+}
+
+function finishLoot(){
+  S.loot = null;
+  S.phase = 'result';
+  render();
+}
+
+function applyCard(p, card, mode){
+  if(card.kind === 'spell'){
+    if(p.pocket.length < CFG.POCKETS){ p.pocket.push(card); log(`${p.name} бере «${card.n}» у кишеню.`, 'magic'); }
+    else if(p.pack.length < CFG.PACK){ p.pack.push(card); log(`${p.name} кладе «${card.n}» у рюкзак.`); }
+    else log(`${p.name}: ніде не місця — «${card.n}» лишається.`, 'bad');
+    return;
+  }
+  if(mode === 'pack'){
+    if(p.pack.length < CFG.PACK){ p.pack.push(card); log(`${p.name} кладе «${card.name}» (+${card.p}) у рюкзак.`); }
+    else log(`${p.name}: рюкзак повний — «${card.name}» лишається.`, 'bad');
+    return;
+  }
+  const old = p.slots[card.slot];
+  p.slots[card.slot] = card;
+  if(old && old.p > 0){
+    if(p.pack.length < CFG.PACK){ p.pack.push(old); log(`${p.name}: «${old.name}» → у рюкзак.`); }
+    else log(`${p.name} викидає «${old.name}» (+${old.p}).`);
+  }
+  log(`${p.name} надягає «${card.name}» (+${card.p}).`, 'good');
+}
+
+function loseItem(p){
+  if(p.pack.length) return p.pack.splice(rnd(p.pack.length),1)[0];
+  const keys = ['weapon','armor','artifact'].filter(k => p.slots[k] && p.slots[k].p > 0);
+  if(!keys.length) return null;
+  const k = pick(keys);
+  const it = p.slots[k];
+  p.slots[k] = null;
+  return it;
+}
+
+/* ============================================================
+   ДІЇ
+   ============================================================ */
+const ACT = {
+
+  start(n){ renderSetup(n); },
+
+  begin(n){
+    const names = [];
+    document.querySelectorAll('.namein').forEach(el => {
+      const i = Number(el.dataset.i);
+      names[i] = (el.value || '').trim() || ('Гравець ' + (i+1));
+    });
+    newGame(n, names);
+  },
+
+  /* --- перехід на сусідню смугу (безкоштовно, 1 раз) --- */
+  move(dir){
+    if(S.phase !== 'idle') return;
+    const p = cur();
+    if(p.moved) return;
+    p.side = (p.side + dir + 4) % 4;
+    p.moved = true;
+    log(`${p.name} переходить на ${SIDE_NAMES[p.side].toLowerCase()}.`);
+    render();
+  },
+
+  /* --- вибір дії --- */
+  choose(act, arg){
+    if(S.phase !== 'idle') return;
+    const p = cur();
+
+    if(act === 'pvp'){
+      const target = S.players[arg];
+      if(!sameSquare(p, target)) return;
+      resolvePvp(p, target);
+      return;
+    }
+
+    if(act === 'throne'){
+      if(p.step !== CFG.STEPS) return;
+      beginEnc(p, { act:'throne', dc: bossDC() });
+      log(`${p.name} іде на штурм трону.`, 'gold');
+      return;
+    }
+
+    if(p.step >= CFG.STEPS) return;
+    let dc;
+    if(act === 'fight')       dc = stepDC(p);
+    else if(act === 'search') dc = stepDC(p) - 2;
+    else if(act === 'sneak')  dc = stepDC(p) - 4;
+    else return;
+    beginEnc(p, { act, dc });
+  },
+
+  /* --- присутність --- */
+  presence(pid, sign){
+    if(S.phase !== 'enc' || S.presenceUsed) return;
+    const roller = cur();
+    const mate = S.players[pid];
+    if(!mate || mate.id === roller.id || !sameSquare(mate, roller)) return;
+    S.presenceUsed = true;
+    if(sign > 0){ S.pend.help += 2; log(`${mate.name} підтримує ${roller.name}: +2.`, 'good'); }
+    else { S.pend.harm += 2; log(`${mate.name} заважає ${roller.name}: −2.`, 'bad'); }
+    render();
+  },
+
+  /* --- магія --- */
+  cast(pid, idx){
+    if(S.phase !== 'enc') return;
+    if(S.castBy.includes(pid)) return;
+    const caster = S.players[pid];
+    const sp = caster.pocket[idx];
+    if(!sp) return;
+    const roller = cur();
+
+    if(sp.s === 'self'  && pid !== roller.id) return;
+    if(sp.s === 'enemy' && pid === roller.id) return;
+
+    caster.pocket.splice(idx,1);
+    S.castBy.push(pid);
+    playSpell(caster, sp, roller);
+    render();
+  },
+
+  /* --- кидок --- */
+  roll(){
+    if(S.phase !== 'enc') return;
+    const p = cur(), pd = S.pend;
+    const r = d20();
+    const b = bonus(p, pd.act);
+    const total = b + r + pd.help - pd.harm;
+
+    let ok, tag = '';
+    if(pd.auto){ ok = true; tag = ' · свиток'; }
+    else if(r === 20){ ok = true; tag = ' · КРИТ'; }
+    else if(r === 1){ ok = false; tag = ' · ПРОВАЛ'; }
+    else ok = total >= pd.dc;
+
+    const lines = [
+      `<span class="die ${r===20?'crit':''} ${r===1?'fail':''}">${r}</span>&nbsp; ` +
+      `${b} + ${r}` + (pd.help?` + ${pd.help}`:'') + (pd.harm?` − ${pd.harm}`:'') +
+      ` = <b>${total}</b> проти DC <b>${pd.dc}</b>${tag}`
+    ];
+
+    applyOutcome(p, pd, ok, r, lines);
+
+    p.temp = 0;
+    const bd = bossPlayer(); if(bd) bd.temp = 0;
+    if(pd.act === 'throne') S.bossBonus = 0;
+
+    S.phase = S.loot ? 'loot' : 'result';
+    render();
+  },
+
+  takeLoot(idx, mode){
+    if(S.phase !== 'loot') return;
+    const p = cur();
+    const card = S.loot[idx];
+    if(!card) return;
+    applyCard(p, card, mode || 'equip');
+    S.loot.splice(idx,1);
+    S.loot.forEach(c => { if(p.pack.length < CFG.PACK) p.pack.push(c); });
+    S.loot = null;
+    finishLoot();
+  },
+
+  skipLoot(){
+    if(S.phase !== 'loot') return;
+    log(`${cur().name} лишає здобич.`);
+    finishLoot();
+  },
+
+  cont(){
+    if(S.phase !== 'result' && S.phase !== 'loot') return;
+    S.result = null; S.loot = null; S.pend = null;
+    nextTurn();
+  },
+
+  playBossCard(){
+    if(S.phase !== 'boss' || !S.bossCard) return;
+    const b = bossPlayer();
+    const [, , fx] = S.bossCard;
+    const foes = S.players.filter(x => x.id !== b.id);
+
+    if(fx === 'guard'){ S.bossBonus = Math.min(CFG.MAX_BOSS_BONUS, S.bossBonus + 2); log('Вартовий: +2 до DC трону.', 'bad'); }
+    else if(fx === 'fear'){ S.bossBonus = Math.min(CFG.MAX_BOSS_BONUS, S.bossBonus + 3); log('Страх: +3 до DC трону.', 'bad'); }
+    else if(fx === 'curse'){ const t = pick(foes); t.temp -= 3; log(`Бос проклинає ${t.name}: −3.`, 'bad'); }
+    else if(fx === 'steal'){
+      const cand = foes.filter(x => gear(x) > 0 || x.pack.length || x.pocket.length);
+      if(cand.length){
+        const t = pick(cand);
+        if(t.pack.length){ const it = t.pack.splice(rnd(t.pack.length),1)[0]; log(`Бос тягне «${it.name}» з рюкзака ${t.name}.`, 'bad'); }
+        else if(t.pocket.length){ const sp = t.pocket.splice(rnd(t.pocket.length),1)[0]; log(`Бос краде «${sp.n}» у ${t.name}.`, 'bad'); }
+        else { const k = pick(['weapon','armor','artifact'].filter(k => t.slots[k])); const it = t.slots[k]; t.slots[k] = null; log(`Бос краде «${it.name}» у ${t.name}.`, 'bad'); }
+      } else log('Бос краде — але красти нічого.', 'bad');
+    }
+    else if(fx === 'wall'){ const t = pick(foes); t.skip = true; log(`Стіна вогню: ${t.name} пропускає хід.`, 'bad'); }
+    else if(fx === 'tax'){ foes.forEach(t => { if(t.pocket.length) t.pocket.splice(rnd(t.pocket.length),1); }); log('Податок: усі скидають карту магії.', 'bad'); }
+
+    S.bossCard = null;
+    endBossTurn();
+  },
+
+  playAgain(){ S = null; renderSplash(); }
+};
+
+/* ============================================================
+   МАГІЯ
+   ============================================================ */
+function playSpell(caster, sp, roller){
+  log(`${caster.name} читає «${sp.n}».`, 'magic');
+
+  if(sp.e === 'bonus'){ S.pend.help += sp.v; }
+  else if(sp.e === 'penalty'){ S.pend.harm += Math.abs(sp.v); }
+  else if(sp.e === 'pass'){ S.pend.auto = true; }
+  else if(sp.e === 'steal'){
+    if(roller.pack.length){
+      const it = roller.pack.splice(rnd(roller.pack.length),1)[0];
+      if(caster.pack.length < CFG.PACK) caster.pack.push(it);
+      log(`«${it.name}» переходить від ${roller.name} до ${caster.name}.`, 'bad');
+    } else log('Рюкзак цілі порожній — красти нічого.', 'bad');
+  }
+  else if(sp.e === 'skip'){ roller.skip = true; log(`${roller.name} скутий — пропустить хід.`, 'bad'); }
+  else if(sp.e === 'lanePen' || sp.e === 'laneBon'){
+    S.players.filter(q => !q.isBoss && q.side === roller.side).forEach(q => { q.temp += sp.v; });
+    log(`Смуга ${SIDE_NAMES[roller.side].toLowerCase()}: ${sp.v>0?'+':'−'}${Math.abs(sp.v)} усім.`, sp.v>0?'good':'bad');
+  }
+  else if(sp.e === 'global'){
+    S.players.forEach(q => { q.temp += sp.v; });
+    log(`Піраміда: ${sp.v>0?'+':'−'}${Math.abs(sp.v)} усім гравцям.`, 'bad');
+  }
+  else if(sp.e === 'quake'){
+    S.players.forEach(q => { if(!q.isBoss && q.step > 0) q.step--; });
+    log('Землетрус: усі відкочуються на крок.', 'bad');
+  }
+  else if(sp.e === 'summon'){
+    S.pend.dc += sp.v;
+    log(`На ${roller.name} наслано стража: DC +${sp.v}.`, 'bad');
+  }
+}
+
+/* ============================================================
+   БІЙ
+   ============================================================ */
+function beginEnc(p, data){
+  S.pend = { help:0, harm:0, auto:false, ...data };
+  if(data.act !== 'throne'){
+    const m = monsterHere(p);
+    S.pend.monster = m;
+    if(m && m.hex){ S.pend.harm += 2; log(`${m.n} шепоче прокляття: −2 до кидка.`, 'magic'); }
+  }
+  S.castBy = [];
+  S.presenceUsed = false;
+  S.phase = 'enc';
+  render();
+}
+
+function resolvePvp(attacker, defender){
+  const ra = d20(), rd = d20();
+  const ta = bonus(attacker) + ra, td = bonus(defender) + rd;
+  const attackerWins = ta > td;
+  const winner = attackerWins ? attacker : defender;
+  const loser  = attackerWins ? defender : attacker;
+
+  const lines = [
+    `<b>${esc(attacker.name)}</b>: d20(${ra}) + ${bonus(attacker)} = <b>${ta}</b>`,
+    `<b>${esc(defender.name)}</b>: d20(${rd}) + ${bonus(defender)} = <b>${td}</b>`
+  ];
+
+  if(loser.step > 0){ loser.step--; lines.push(`${loser.name} відкочується на крок назад.`); }
+  else lines.push(`${loser.name} і так на самому низу.`);
+
+  if(loser.pack.length){
+    const it = loser.pack.splice(rnd(loser.pack.length),1)[0];
+    if(winner.pack.length < CFG.PACK) winner.pack.push(it);
+    lines.push(`${winner.name} забирає «${it.name}» з рюкзака.`);
+  }
+
+  lines.push(`Нічия — на користь того, хто захищався.`);
+
+  S.result = { win: attackerWins, title: attackerWins ? 'НАПАД ВДАВСЯ' : 'НАПАД ВІДБИТО', lines };
+  S.phase = 'result';
+  log(`${attacker.name} нападає на ${defender.name}: ${attackerWins?'переміг':'програв'}.`, attackerWins?'bad':'good');
+  render();
+}
+
+function applyOutcome(p, pd, ok, roll, lines){
+  const startStep = p.step;
+  const crit = roll === 20 ? 1 : 0;
+
+  if(pd.act === 'throne'){
+    if(ok){
+      S.result = { win:true, title:'ТРОН ВЗЯТО', lines };
+      coronate(p);
+      S.result.lines.push(`<b>${p.name}</b> сідає на трон.`);
+    } else {
+      S.result = { win:false, title:'ТРОН УТРИМАНО', lines };
+      S.result.lines.push('Бос вистояв. Підхід витрачено.');
+      log(`${p.name} не бере трон.`, 'bad');
+    }
+    return;
+  }
+
+  if(ok){
+    let drawN = 0, advanced = false, title = 'ПРОЙДЕНО';
+    if(pd.act === 'fight'){ advanced = true; drawN = 2 + crit; }
+    else if(pd.act === 'search'){ drawN = 1 + crit; title = 'ОБШУК'; }
+    else if(pd.act === 'sneak'){ advanced = true; drawN = crit; title = 'ПРОКРАВСЯ'; }
+
+    S.result = { win:true, title, lines };
+    if(advanced && p.step < CFG.STEPS){
+      p.step++;
+      S.result.lines.push(`Крок ${startStep+1} → ${p.step+1} з ${CFG.STEPS+1}.`);
+      if(p.step === CFG.STEPS) S.result.lines.push('Вище — тільки трон.');
+    } else if(advanced){
+      S.result.lines.push('Ти вже на вершині.');
+    } else {
+      S.result.lines.push('Лишаєшся на місці, але зі здобиччю.');
+    }
+    if(drawN) grantLoot(startStep, drawN);
+    log(`${p.name}: ${title.toLowerCase()}.`, 'good');
+  } else {
+    let extra = 'Втрачений хід.';
+    if(roll === 1){
+      const lost = loseItem(p);
+      extra = lost ? `Критичний провал: «${lost.name}» знищено.` : 'Критичний провал — платити нічим.';
+      if(p.step > 0){ p.step--; extra += ' Відкат на крок.'; }
+    } else if(pd.monster && pd.monster.guard && p.step > 0){
+      p.step--;
+      extra = 'Охоронець трону відкидає тебе на крок назад.';
+    }
+    S.result = { win:false, title:'ПРОВАЛ', lines };
+    S.result.lines.push(extra);
+    log(`${p.name}: провал.`, 'bad');
+  }
+}
+
+function coronate(winner){
+  const prev = bossPlayer();
+  S.players.forEach(x => x.isBoss = false);
+  if(prev && prev.id !== winner.id) log(`${prev.name} втрачає трон.`, 'bad');
+  winner.isBoss = true;
+  winner.step = CFG.STEPS;
+  S.boss = { playerId: winner.id };
+  S.bossRounds = CFG.ROUNDS;
+  S.bossBonus = 0;
+  S.coronations++;
+  if(S.coronations > 1) log(`Трон міцнішає: +${throneHardening()}.`, 'gold');
+  log(`👑 ${winner.name} стає БОСОМ. У решти ${CFG.ROUNDS} кола.`, 'gold');
+}
+
+/* ============================================================
+   ХІД
+   ============================================================ */
+function nextTurn(){
+  S.pend = null; S.result = null; S.loot = null; S.bossCard = null; S.castBy = [];
+  if(S.over) return;
+
+  const n = S.players.length;
+  for(let i = 0; i < n; i++){
+    S.turn = (S.turn + 1) % n;
+    const cand = cur();
+    if(cand.skip){
+      cand.skip = false;
+      log(`${cand.name} пропускає хід.`, 'bad');
+      continue;
+    }
+    break;
+  }
+
+  const now = cur();
+  now.moved = false;
+  if(bossExists() && now.id === S.boss.playerId){
+    S.phase = 'boss';
+    S.bossCard = pick(BOSS_CARDS);
+    log('Хід Боса.', 'gold');
+  } else {
+    S.phase = 'idle';
+  }
+  render();
+}
+
+function endBossTurn(){
+  S.bossRounds--;
+  if(S.bossRounds <= 0){
+    S.over = true;
+    S.phase = 'over';
+    S.winner = bossPlayer();
+    log(`Бос пережив ${CFG.ROUNDS} кола. ${S.winner.name} перемагає!`, 'gold');
+    render();
+    return;
+  }
+  nextTurn();
+}
+
+/* ============================================================
+   ДОШКА (SVG)
+   ============================================================ */
+const PLAYER_COLORS = ['#e0ae4e','#6aa864','#5c8bb5','#c14734'];
+
+function boardSVG(){
+  const out = [];
+  const A = x => out.push(x);
+
+  A('<svg class="board-svg" viewBox="-46 -46 1092 1092" xmlns="http://www.w3.org/2000/svg" font-family="Segoe UI, Arial, sans-serif">');
+  A('<defs><radialGradient id="bg" cx="50%" cy="45%" r="75%"><stop offset="0%" stop-color="#241c15"/><stop offset="100%" stop-color="#0d0b09"/></radialGradient>' +
+    '<linearGradient id="th" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7a5a22"/><stop offset="100%" stop-color="#33240f"/></linearGradient></defs>');
+  A('<rect x="-46" y="-46" width="1092" height="1092" fill="url(#bg)"/>');
+  A('<text x="500" y="1034" text-anchor="middle" font-size="17" letter-spacing="7" fill="#6d6253">ПІВДЕНЬ</text>');
+  A('<text x="500" y="-20" text-anchor="middle" font-size="17" letter-spacing="7" fill="#6d6253">ПІВНІЧ</text>');
+  A('<text x="-20" y="500" text-anchor="middle" font-size="17" letter-spacing="4" fill="#6d6253" transform="rotate(-90 -20 500)">ЗАХІД</text>');
+  A('<text x="1020" y="500" text-anchor="middle" font-size="17" letter-spacing="4" fill="#6d6253" transform="rotate(90 1020 500)">СХІД</text>');
+
+  [[60,940,'#1a1510','#3d3227'],[260,740,'#211a12','#4a3c2b'],[400,600,'#2a2116','#5a4830']].forEach(([a,b,f,st])=>{
+    A(`<rect x="${a}" y="${a}" width="${b-a}" height="${b-a}" rx="18" fill="${f}" stroke="${st}" stroke-width="2"/>`);
+  });
+
+  // монстри
+  for(let side=0; side<4; side++){
+    for(let i=0;i<CFG.STEPS;i++){
+      const {x,y} = STEP_DOTS[side][i];
+      const lvl = CFG.TIER[i];
+      const fill = {1:'#4a1d16',2:'#5c2a14',3:'#6b3a12',4:'#6b3a12'}[lvl];
+      const edge = {1:'#8a3a2c',2:'#a05a2a',3:'#c07a2a',4:'#c07a2a'}[lvl];
+      A(`<circle cx="${x}" cy="${y}" r="19" fill="${fill}" stroke="${edge}" stroke-width="2"/>`);
+      A(`<text x="${x}" y="${y+5}" text-anchor="middle" font-size="13" font-weight="600" fill="#e8c7a8">${CFG.DC[i]}</text>`);
+      const mm = MONSTERS[i];
+      if(mm.fast || mm.hex || mm.guard){
+        const ring = mm.guard ? '#e0ae4e' : (mm.hex ? '#9a7cc4' : '#6aa864');
+        A(`<circle cx="${x}" cy="${y}" r="24" fill="none" stroke="${ring}" stroke-width="1.6" stroke-dasharray="3 3"/>`);
+      }
+    }
+  }
+
+  // трон
+  A('<rect x="452" y="452" width="96" height="96" rx="13" fill="url(#th)" stroke="#e0ae4e" stroke-width="3"/>');
+  A('<text x="500" y="498" text-anchor="middle" font-size="34" fill="#f0d9a6">♛</text>');
+  A(`<text x="500" y="530" text-anchor="middle" font-size="11" fill="#c9a75f">DC ${bossExists()?bossDC():CFG.THRONE_DC}</text>`);
+
+  // фішки
+  const groups = {};
+  S.players.forEach(p => {
+    const key = p.isBoss ? 'throne' : p.side + ':' + p.step;
+    (groups[key] = groups[key] || []).push(p);
+  });
+
+  Object.keys(groups).forEach(key => {
+    const arr = groups[key];
+    arr.forEach((p, i) => {
+      let x, y;
+      if(key === 'throne'){ x = 500; y = 500 + (i * 0); }
+      else {
+        const side = Number(key.split(':')[0]), step = Number(key.split(':')[1]);
+        if(step === 0){ [x, y] = LANE[side].start; }
+        else { const d = STEP_DOTS[side][step-1]; x = d.x; y = d.y; }
+        const off = (i - (arr.length-1)/2) * 26;
+        if(LANE[side].v) x += off; else y += off;
+      }
+      const col = PLAYER_COLORS[p.id % 4];
+      A(shapeEl(p.id, x, y, 13, col, '#0d0b09', 2.5));
+    });
+  });
+
+  A('</svg>');
+  return out.join('');
+}
+
+/* ============================================================
+   РЕНДЕР
+   ============================================================ */
+function render(){
+  if(!S){ renderSplash(); return; }
+  if(S.phase === 'over'){ renderOver(); return; }
+
+  document.getElementById('app').innerHTML = `
+    ${headerHTML()}
+    ${trackerHTML()}
+    <div class="board">
+      <aside>
+        <div class="panel" style="padding:6px">${boardSVG()}</div>
+        <div class="panel" style="margin-top:12px"><h3>Гравці</h3>${playersHTML()}</div>
+      </aside>
+      <main class="center panel" style="border:0;background:transparent;padding:0">${centerHTML()}</main>
+      <aside class="panel"><h3>Хроніка</h3>
+        <div class="log">${S.log.slice(0,50).map(l=>`<div class="l ${l.cls}">${esc(l.msg)}</div>`).join('')}</div>
+      </aside>
+    </div>`;
+}
+
+function headerHTML(){
+  const p = cur();
+  let st = `Хід: <b>${esc(p.name)}</b> · бонус <b>+${bonus(p)}</b>`;
+  if(bossExists()) st += `<br><span class="gold">👑 ${esc(bossPlayer().name)} · DC ${bossDC()} · ${S.bossRounds}</span>`;
+  else st += `<br><span class="gold">Трон: DC ${CFG.THRONE_DC}</span>`;
+  return `<header><h1>ТРОН</h1><div class="spacer"></div><div class="status">${st}</div></header>`;
+}
+
+function trackerHTML(){
+  return `<div class="tracker">` + S.players.map(p=>{
+    const prog = p.isBoss ? 7 : p.step;
+    const pct = Math.round(prog / 7 * 100);
+    return `<div class="tpill ${p.id===S.turn?'cur':''} ${p.isBoss?'bos':''}">
+      ${badge(p.id)}
+      <span class="tname">${esc(p.name)}</span>
+      <span class="tbar"><i style="width:${pct}%;background:${PLAYER_COLORS[p.id%4]}"></i></span>
+      <span class="tval">${p.isBoss?'трон':p.step+'/'+CFG.STEPS}</span>
+    </div>`;
+  }).join('') + `</div>`;
+}
+
+function renderSetup(n){
+  document.getElementById('app').innerHTML = `
+    <div class="splash">
+      <h1>ТРОН</h1>
+      <div class="tag">хто йде нагору?</div>
+      <div class="setup">
+        ${Array.from({length:n}, (_,i)=>`
+          <div class="setuprow">${badge(i)}
+            <input class="namein" data-i="${i}" maxlength="14" value="Гравець ${i+1}">
+          </div>`).join('')}
+      </div>
+      <div class="pick">
+        <button class="primary" data-act="begin" data-args='[${n}]'>Почати</button>
+        <button data-act="playAgain">Назад</button>
+      </div>
+    </div>`;
+}
+
+function playersHTML(){
+  const canCast = S.phase === 'enc';
+  return S.players.map(p=>{
+    const isTurn = p.id === S.turn;
+    const slots = ['weapon','armor','artifact'].map(k=>{
+      const it = p.slots[k];
+      return it ? `<span class="chip">${SLOT_UA[k]}: ${esc(it.name)} ${itemTxt(it)}</span>`
+                : `<span class="chip empty">${SLOT_UA[k][0]}: —</span>`;
+    }).join('');
+
+    const pockets = p.pocket.length
+      ? p.pocket.map(c => `<span class="chip spell">${esc(c.n)}</span>`).join('')
+      : `<span class="chip empty">магія: —</span>`;
+
+    const pack = p.pack.length
+      ? p.pack.map(c=>`<span class="chip pack">🎒 ${esc(c.name || c.n)}${c.p?' +'+c.p:''}</span>`).join('')
+      : `<span class="chip empty">🎒 —</span>`;
+
+    const roller = (S.phase === 'enc') ? cur() : null;
+    const canPresence = roller && p.id !== roller.id && sameSquare(p, roller) && !S.presenceUsed;
+
+    return `<div class="pcard ${isTurn?'turn':''} ${p.isBoss?'boss':''}">
+      <div class="phead"><span class="pname">${badge(p.id)} ${p.isBoss?'👑 ':''}${esc(p.name)}</span>
+        <span class="chip">${p.isBoss?'трон':SIDE_NAMES[p.side]+' · '+p.step}</span></div>
+      <div class="pstat">бонус <b>+${bonus(p)}</b> = ${p.step+1} + ${gear(p)}${p.temp?(p.temp>0?' + '+p.temp:' − '+Math.abs(p.temp)):''}</div>
+      <div class="chips">${slots}</div>
+      <div class="chips" style="margin-top:3px">${pockets}</div>
+      <div class="chips" style="margin-top:3px">${pack}</div>
+      ${canPresence ? `<div class="chips" style="margin-top:5px">
+        <button class="tiny" data-act="presence" data-args='[${p.id},1]'>+2 допомогти</button>
+        <button class="tiny danger" data-act="presence" data-args='[${p.id},-1]'>−2 завадити</button></div>` : ''}
+    </div>`;
+  }).join('');
+}
+
+function centerHTML(){
+  const p = cur();
+  if(S.phase === 'enc')    return encHTML(p);
+  if(S.phase === 'result') return resultHTML();
+  if(S.phase === 'loot')   return lootHTML(p);
+  if(S.phase === 'boss')   return bossHTML(p);
+  return idleHTML(p);
+}
+
+function idleHTML(p){
+  if(p.isBoss) return `<div class="panel"><div class="turn-head">Ти — Бос.</div></div>`;
+
+  const mates = S.players.filter(q => q.id !== p.id && sameSquare(p, q));
+  const atTop = p.step === CFG.STEPS;
+  const m = monsterHere(p);
+  const ab = abilityOf(m);
+
+  let main = '';
+  if(atTop){
+    main = `<button class="act-btn primary" data-act="choose" data-args='["throne"]'>
+      <b>👑 Штурм трону</b><small>DC ${bossDC()} · успіх: ти стаєш Босом</small></button>`;
+  } else {
+    const sneakOff = !!(m && m.fast);
+    main = `<button class="act-btn primary" data-act="choose" data-args='["fight"]'>
+        <b>⚔ Бій</b><small>DC ${stepDC(p)} · +1 крок і 2 скарби</small></button>
+      <button class="act-btn" data-act="choose" data-args='["search"]'>
+        <b>🔍 Обшук</b><small>DC ${stepDC(p)-2} · 1 скарб, без просування</small></button>
+      <button class="act-btn" data-act="choose" data-args='["sneak"]' ${sneakOff?'disabled':''}>
+        <b>🥷 Скрадання</b><small>${sneakOff?'спритний — не прокрастись':`DC ${stepDC(p)-4} · +1 крок, без скарбу`}</small></button>`;
+  }
+
+  const rival = mates.length
+    ? `<button class="act-btn danger" data-act="choose" data-args='["pvp",${mates[0].id}]'>
+         <b>🗡 Напасти на ${esc(mates[0].name)}</b><small>d20 проти d20</small></button>`
+    : '';
+
+  const move = p.moved ? '' : `
+    <button class="act-btn" data-act="move" data-args='[-1]'>
+      <b>↶ ${SIDE_NAMES[(p.side+3)%4]}</b><small>перехід · безкоштовно</small></button>
+    <button class="act-btn" data-act="move" data-args='[1]'>
+      <b>↷ ${SIDE_NAMES[(p.side+1)%4]}</b><small>перехід · безкоштовно</small></button>`;
+
+  return `
+    <div class="panel">
+      <div class="turn-head">Хід: <b>${esc(p.name)}</b> · ${SIDE_NAMES[p.side]}, крок ${p.step} з ${CFG.STEPS}</div>
+      <h2 class="big">${atTop ? 'Останній крок' : 'Смуга ' + SIDE_NAMES[p.side].toLowerCase()}</h2>
+      <div class="sub">Бонус <b style="color:var(--ink)">+${bonus(p)}</b>. ${atTop ? 'Вище — тільки трон.' : 'Перед тобою монстр.'}</div>
+      ${m ? `<div class="monster" style="margin-bottom:12px">
+        <div class="mtype">СХОДИНКА ${p.step+1} З ${CFG.STEPS}</div>
+        <h2>${esc(m.n)}</h2>
+        <div class="sub" style="margin:6px 0 0">DC <b style="color:var(--ink)">${m.dc}</b>
+        ${ab?`<br><span style="color:var(--violet)">${esc(ab)}</span>`:''}</div>
+      </div>` : ''}
+      <div class="actions">${main}${rival}${move}</div>
+      ${p.pocket.length ? `<div class="sub" style="margin-top:14px">Магія в кишені: ${p.pocket.map(c=>esc(c.n)).join(', ')}. Кнопки з'являться, коли кидатимеш кубик.</div>` : ''}
+      ${mates.length ? `<div class="sub" style="margin-top:14px">Поруч: ${mates.map(m=>esc(m.name)).join(', ')}. Можеш допомогти, завадити або напасти.</div>` : ''}
+    </div>`;
+}
+
+function spellBar(roller){
+  const out = [];
+  S.players.forEach(p => {
+    if(S.castBy.includes(p.id)) return;
+    p.pocket.forEach((c,i) => {
+      if(c.s === 'self' && p.id !== roller.id) return;
+      if(c.s === 'enemy' && p.id === roller.id) return;
+      out.push(`<button class="tiny magic" title="${esc(c.t)}" data-act="cast" data-args='[${p.id},${i}]'>
+        🔮 ${esc(c.n)}${c.v?(c.v>0?' +'+c.v:' '+c.v):''}
+        <span style="opacity:.55">${esc(p.name.replace('Гравець ','Г'))}</span></button>`);
+    });
+  });
+  return out.length
+    ? `<div class="spellbar"><div class="sbtitle">МАГІЯ — одна карта за кидок</div>${out.join('')}</div>`
+    : '';
+}
+
+function encHTML(p){
+  const pd = S.pend;
+  const need = pd.dc - bonus(p, pd.act) - pd.help + pd.harm;
+  const label = { fight:'БІЙ', search:'ОБШУК', sneak:'СКРАДАННЯ', throne:'ШТУРМ ТРОНУ' }[pd.act] || 'БІЙ';
+  const m = pd.monster;
+  return `
+    <div class="panel">
+      <div class="monster ${pd.act==='throne'?'boss':''}" style="margin-bottom:0">
+        <div class="mtype">${pd.act==='throne'?'ТРОН':'СХОДИНКА '+(p.step+1)+' · '+label}</div>
+        <h2>${m?esc(m.n):'Трон'}</h2>
+        ${m&&abilityOf(m)?`<div class="sub" style="margin:4px 0 0;color:var(--violet)">${esc(abilityOf(m))}</div>`:''}
+        <div class="versus">
+          <div class="vbox mine"><span>бонус</span><b>+${bonus(p, pd.act)}</b></div>
+          <div class="plus">+ d20</div>
+          ${pd.help?`<div class="plus" style="color:var(--green)">+ ${pd.help}</div>`:''}
+          ${pd.harm?`<div class="plus" style="color:var(--blood)">− ${pd.harm}</div>`:''}
+          <div class="plus">проти</div>
+          <div class="vbox foe"><span>DC</span><b>${pd.dc}</b></div>
+        </div>
+      </div>
+      ${need > 20
+        ? '<div class="sub" style="color:var(--blood); margin-top:12px">Кубиком це не взяти — потрібна магія або допомога.</div>'
+        : `<div class="sub" style="margin-top:12px">Треба <b style="color:var(--ink)">${Math.max(1,need)}</b> або більше.</div>`}
+      ${spellBar(p)}
+      <div class="actions"><button class="primary" data-act="roll">🎲 Кинути d20</button></div>
+    </div>`;
+}
+
+function resultHTML(){
+  const r = S.result;
+  return `<div class="panel">
+    <div class="resultbox ${r.win?'win':'lose'}">
+      <h2>${esc(r.title)}</h2>
+      ${r.lines.map(l=>`<p>${l}</p>`).join('')}
+    </div>
+    <div class="actions"><button class="primary" data-act="cont">Далі →</button></div>
+  </div>`;
+}
+
+function lootHTML(p){
+  const r = S.result;
+  const cards = S.loot.map((c,i)=>{
+    const isItem = c.kind === 'item';
+    const worn = isItem ? p.slots[c.slot] : null;
+    const better = worn ? (c.p > worn.p) : true;
+    return `<div class="lootcard">
+      <div class="lt">${isItem ? SLOT_UA[c.slot] : 'МАГІЯ'}</div>
+      <div class="ln">${esc(c.name || c.n)}</div>
+      <div class="lp">${isItem ? itemTxt(c) : esc(c.t)}</div>
+      ${isItem && worn ? `<div class="sub" style="margin:5px 0 0;font-size:10.5px">зараз: ${esc(worn.name)} ${itemTxt(worn)}
+        ${better?'<span style="color:var(--green)">краще</span>':'<span style="color:var(--blood)">гірше</span>'}</div>`:''}
+      <div style="margin-top:9px; display:flex; gap:5px; flex-wrap:wrap">
+        ${isItem ? `<button class="tiny primary" data-act="takeLoot" data-args='[${i},"equip"]'>Надягти</button>` : ''}
+        <button class="tiny" data-act="takeLoot" data-args='[${i},"pack"]'>${isItem?'У рюкзак':'Взяти'}</button>
+      </div>
+    </div>`;
+  }).join('');
+  return `<div class="panel">
+    <div class="resultbox ${r.win?'win':'lose'}" style="margin-bottom:12px">
+      <h2>${esc(r.title)}</h2>${r.lines.map(l=>`<p>${l}</p>`).join('')}
+    </div>
+    <h3 style="font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--dim)">Здобич</h3>
+    <div class="sub" style="margin:4px 0 0">Одну річ надягаєш, решта — у рюкзак.</div>
+    <div class="lootgrid">${cards || '<span class="sub">порожньо</span>'}</div>
+    <div class="actions"><button data-act="skipLoot">Відмовитись</button></div>
+  </div>`;
+}
+
+function bossHTML(p){
+  const card = S.bossCard;
+  return `<div class="panel">
+    <div class="turn-head">Ти — <b>БОС</b>. Лишилось кіл: <b>${S.bossRounds}</b>.</div>
+    <div class="monster boss" style="margin-bottom:0">
+      <div class="mtype">КАРТА БОСА</div>
+      <h2>${card?esc(card[0]):'—'}</h2>
+      <div class="sub" style="margin:8px 0 0;color:#cdb98d">${card?esc(card[1]):''}</div>
+    </div>
+    <div class="sub" style="margin-top:12px">DC трону: <b style="color:var(--ink)">${bossDC()}</b></div>
+    <div class="actions"><button class="primary" data-act="playBossCard">Зіграти і завершити хід</button></div>
+  </div>`;
+}
+
+function renderSplash(){
+  document.getElementById('app').innerHTML = `
+    <div class="splash">
+      <h1>ТРОН</h1>
+      <div class="tag">піраміда · чотири смуги · один трон</div>
+      <p>Кожен піднімається своєю стороною: шість монстрів, потім трон. Можна перебігти на чужу смугу — допомогти, завадити або вдарити.</p>
+      <p>Хто завалить Боса — <b style="color:var(--gold)">сам стає Босом</b>. У решти три кола.</p>
+      <div class="pick">
+        <button class="primary" data-act="start" data-args='[2]'>2 гравці</button>
+        <button class="primary" data-act="start" data-args='[3]'>3 гравці</button>
+        <button class="primary" data-act="start" data-args='[4]'>4 гравці</button>
+      </div>
+      <details open>
+        <summary>Правила коротко</summary>
+        <table class="mini">
+          <tr><th>Крок</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>Трон</th></tr>
+          <tr><td>DC</td><td>10</td><td>13</td><td>15</td><td>18</td><td>22</td><td>24</td><td>30</td></tr>
+        </table>
+        <ul>
+          <li><b>Хід:</b> безкоштовно перехід на сусідню смугу → дія (бій / обшук / скрадання / напад / штурм).</li>
+          <li><b>Присутність:</b> стоїш на клітинці з активним — можеш дати йому +2 або −2.</li>
+          <li><b>Напад:</b> d20+бонус проти d20+бонус. Переможець штовхає назад і тягне з рюкзака.</li>
+          <li><b>Магія:</b> на себе, на ворога, на смугу, на піраміду. Одна карта за кидок.</li>
+          <li><b>Трон:</b> DC 30, бос грає карти, три кола, кожен переворот робить трон міцнішим.</li>
+        </ul>
+      </details>
+    </div>`;
+}
+
+function renderOver(){
+  const w = S.winner;
+  document.getElementById('app').innerHTML = `
+    <div class="splash">
+      <h1>КІНЕЦЬ</h1>
+      <div class="tag" style="color:var(--gold);font-size:22px">👑 ${esc(w.name)} перемагає</div>
+      <div class="tag">Бос пережив ${CFG.ROUNDS} кола і втримав трон.</div>
+      <div class="panel" style="text-align:left;margin:24px 0">${playersHTML()}</div>
+      <div class="pick"><button class="primary" data-act="playAgain">Нова гра</button></div>
+    </div>`;
+}
+
+/* ============================================================
+   ПОДІЇ
+   ============================================================ */
+document.addEventListener('click', ev => {
+  const el = ev.target.closest('[data-act]');
+  if(!el) return;
+  const fn = ACT[el.dataset.act];
+  if(!fn) return;
+  let args = [];
+  try { args = JSON.parse(el.dataset.args || '[]'); } catch(e){}
+  fn(...args);
+});
+
+renderSplash();
+
+})();
+</script>
+</body>
+</html>
